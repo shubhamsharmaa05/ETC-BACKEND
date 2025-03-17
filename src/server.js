@@ -7,7 +7,7 @@ connectDB()
             console.log("server connection error", error);
         });
         app.listen(process.env.PORT || 8000,()=>{
-            console.log(`📡 server is listing at localhost:${process.env.PORT}`);
+            console.log(`📡 server is listing at http://localhost:8000/${process.env.PORT}`);
         })
     }) 
     .catch((error)=>{
