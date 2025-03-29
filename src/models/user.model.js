@@ -14,7 +14,6 @@ const userSchema = new mongoose.Schema({
     },
     lastName:{
         type: String,
-        required: true,
         lowercase: true,
         trim: true
     },
@@ -50,7 +49,7 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true,
+        required: function () { return this.authType !== "google"; },
         trim: true,
         minlength: 8, // Ensures password is at least 8 characters
         validate: {
@@ -58,7 +57,18 @@ const userSchema = new mongoose.Schema({
                 return /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(value);
             },
             message: "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.",
-        }
+        },
+        
+    },
+    authType: {
+        type: String,
+        enum: ["local", "google"],
+        default: "local"
+    },
+    googleId: {
+        type: String, // Store Google ID for authentication
+        unique: true,
+        sparse: true // Allows multiple null values
     },
     address:[
         { 
@@ -79,10 +89,9 @@ const userSchema = new mongoose.Schema({
           },
         },
       ],
-    
-    refreshToken:{
+  refreshToken: {
         type: String
-    }
+    },  
 },{timestamps: true});
 
 // hashing using bcrypt

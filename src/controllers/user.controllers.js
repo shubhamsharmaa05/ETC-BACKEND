@@ -1,7 +1,8 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiRespones.js";
-import { user } from "../models/user.model.js";
+import { user} from "../models/user.model.js";
+
 
 const  userRegister = asyncHandler(async (req, res)=>{
     // get user details
@@ -45,7 +46,33 @@ const  userRegister = asyncHandler(async (req, res)=>{
         );
 })
 
+const OAuth2Client = asyncHandler(async (req,res)=>{
+    const {token} = req.body;
+
+    const payload = ticket.getPayload();
+    const {firstName ,email} = payload;
+
+    let user = await user.findOne({email});
+    if(!user){
+        user = new user({
+            fullName: firstName,
+            email: email,
+            googleId: token,
+        });
+        await user.save();
+    } else {
+        user.googleToken = token;
+        await user.save();
+    }
+    return res
+        .status(201)
+        .json(
+            new apiResponse(200,createdUser,"user registered Successfully")
+        );
+
+})
 
 export {
-    userRegister
+    userRegister,
+    OAuth2Client
 }
