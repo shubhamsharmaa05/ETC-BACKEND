@@ -3,12 +3,14 @@ import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiRespones.js";
 import { user} from "../models/user.model.js";
 import {OAuth2Client} from "google-auth-library";
+import Joi from "joi";
+
 
 const  userRegister = asyncHandler(async (req, res)=>{
     // get user details
-    const {firstName, lastName, password, Email, confirm_password} = req.body;
+    const {firstName, lastName, password, email, confirm_password} = req.body;
     // check if empty or not
-    if([firstName, lastName, password, Email, confirm_password].some(
+    if([firstName, lastName, password, email, confirm_password].some(
         (field)=> field?.trim() === "",
     )){
         throw new apiError(400, "all fields are required");
@@ -19,7 +21,7 @@ const  userRegister = asyncHandler(async (req, res)=>{
     }
 
     // check user exits  or not
-    const existedUser = await user.findOne({Email});
+    const existedUser = await user.findOne({email});
     if (existedUser){
         throw new apiError(409,"already exits email");
     }
@@ -27,7 +29,7 @@ const  userRegister = asyncHandler(async (req, res)=>{
     const User = await user.create({
         firstName,
         lastName,
-        Email,
+        email,
         password
     });
 
@@ -56,6 +58,13 @@ const googleLogin = asyncHandler(async (req, res) => {
             return res.status(400).json(new apiResponse(400, {}, "Token is required"));
         }
 
+        // Validate token format
+        const schema = Joi.object({ token: Joi.string().required() });
+        const { error } = schema.validate(req.body);
+        if (error) {
+            return res.status(400).json(new apiResponse(400, {}, "Invalid token format"));
+        }
+
         // Verify Google token
         const ticket = await client.verifyIdToken({
             idToken: token,
@@ -63,30 +72,37 @@ const googleLogin = asyncHandler(async (req, res) => {
         });
 
         const payload = ticket.getPayload();
-        const { name: firstName, email, sub: googleId } = payload;
-        console.log(email);
+        if (!payload || payload.exp * 1000 < Date.now()) {
+            return res.status(401).json(new apiResponse(401, {}, "Token has expired"));
+        }
 
-        let User = await user.findOne({ email });
+        const { email, sub: googleId } = payload;
+
+        // Check if user exists
+        let User = await user.findOne({ $or: [{ email }, { googleId }] });
 
         if (!User) {
             User = new user({
                 firstName: email,
-                Email: email,
-                googleId: googleId, // Use unique Google ID instead of token
+                email: email,
+                googleId: googleId,
                 authType: "google",
             });
             await User.save();
+            return res.status(201).json(new apiResponse(200, User, "User registered successfully"));
         } else {
-            User.googleToken = token; // Not recommended, but kept if needed
-            await User.save();
+            return res.status(200).json(new apiResponse(200, User, "User logged in successfully"));
         }
-
-        return res.status(201).json(new apiResponse(200, User, "User registered successfully"));
     } catch (error) {
         console.error("Google login error:", error);
+        logger.error(`Google login failed for token: ${req.body.token}`);
         return res.status(500).json(new apiResponse(500, {}, "Internal Server Error"));
     }
 });
+
+
+
+
 
 export {
     userRegister,

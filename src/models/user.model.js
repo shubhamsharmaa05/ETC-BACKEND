@@ -17,12 +17,13 @@ const userSchema = new mongoose.Schema({
         lowercase: true,
         trim: true
     },
-    Email: {
+    email: {
         type: String,
         required: [true, "Email is required"],
         lowercase: true,
         trim: true,
         unique: true,
+        sparse: true,
         validate: {
             validator: async function (value) {
                 // Basic email validation
