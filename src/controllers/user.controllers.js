@@ -8,15 +8,15 @@ import Joi from "joi";
 
 const  userRegister = asyncHandler(async (req, res)=>{
     // get user details
-    const {firstName, lastName, password, email, confirm_password} = req.body;
+    const {firstName, lastName, password, email, confirmPassword} = req.body;
     // check if empty or not
-    if([firstName, lastName, password, email, confirm_password].some(
+    if([firstName, lastName, password, email, confirmPassword].some(
         (field)=> field?.trim() === "",
     )){
         throw new apiError(400, "all fields are required");
     }
     // check the confirm password and password
-    if(password != confirm_password){
+    if(password != confirmPassword){
         throw new apiError(400, "password are not same");
     }
 
