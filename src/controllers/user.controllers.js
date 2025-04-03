@@ -5,6 +5,23 @@ import { user} from "../models/user.model.js";
 import {OAuth2Client} from "google-auth-library";
 import Joi from "joi";
 
+const generateAccessAndRefereshToken = async (userId) => {
+    try {
+        const User = await user.findById(userId);
+        const accessToken = User.generateAccessToken();
+        const refreshToken = User.generateRefreshToken();
+
+        User.refreshToken = refreshToken;
+        await User.save({ ValidityBeforeSave: false });
+
+        return { accessToken, refreshToken };
+    } catch (error) {
+        throw new apiError(
+            500,
+            "something went wrong while generating the access and referesh token",
+        );
+    }
+};
 
 const  userRegister = asyncHandler(async (req, res)=>{
     // get user details
@@ -47,8 +64,7 @@ const  userRegister = asyncHandler(async (req, res)=>{
         .json(
             new apiResponse(200,createdUser,"user registered Successfully")
         );
-})
-
+});
 
 const client = new OAuth2Client("921058034806-5e0mktavr81tadlmiidtcpgeifkd05fo.apps.googleusercontent.com");
 
@@ -102,10 +118,46 @@ const googleLogin = asyncHandler(async (req, res) => {
 });
 
 
+const loginUser = asyncHandler(async (req, res)=>{
+    const {email,password} = req.body;
+    if([email,password].some((field)=>field?.trim()==="")){
+        throw new apiError(400,"all fields are required");
+    }
+    const User = await user.findOne({email});
+    if(!User){
+        throw new apiError(400,"user is not exits");
+    }
+
+    const isPasswordCorrect = await User.isPasswordCorrect(password);
+    if(!isPasswordCorrect){
+        throw new apiError(401,"password is invalid");
+    }
+    const {accessToken,refreshToken} = await generateAccessAndRefereshToken(User._id);
+
+    const loggedInUser = await user.findById(User._id).select("-password -refreshToken");
+
+    const options = {
+        httpOnly: true,
+        secure : true,
+        sameSite : 'none',
+    };
+    return res
+    .status(200)
+    .cookie("accessToken",accessToken,options)
+    .cookie("refreshToken",refreshToken,options)
+    .json(
+        new apiResponse(
+            200,
+            {user:loggedInUser,accessToken,refreshToken},
+            "user logged in successfully",
+        ),
+    );
+});
 
 
 
 export {
     userRegister,
     googleLogin,
+    loginUser
 }
