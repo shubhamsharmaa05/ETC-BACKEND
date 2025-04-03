@@ -19,11 +19,10 @@ const userSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-        required: [true, "Email is required"],
+        required: [true, "email is required"],
         lowercase: true,
         trim: true,
         unique: true,
-        sparse: true,
         validate: {
             validator: async function (value) {
                 // Basic email validation
@@ -52,15 +51,15 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: function () { return this.authType !== "google"; },
         trim: true,
-        minlength: 8, // Ensures password is at least 8 characters
+        minlength: 8,
         validate: {
             validator: function (value) {
-                return /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(value);
+                return /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~])[A-Za-z\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]{8,}$/.test(value);
             },
             message: "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.",
         },
-        
     },
+    
     authType: {
         type: String,
         enum: ["local", "google"],

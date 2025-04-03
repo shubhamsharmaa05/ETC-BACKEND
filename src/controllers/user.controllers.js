@@ -15,6 +15,7 @@ const  userRegister = asyncHandler(async (req, res)=>{
     )){
         throw new apiError(400, "all fields are required");
     }
+    console.log(email);
     // check the confirm password and password
     if(password != confirmPassword){
         throw new apiError(400, "password are not same");
