@@ -53,7 +53,7 @@ const  userRegister = asyncHandler(async (req, res)=>{
 
     const createdUser = await user
         .findById(User._id)
-        .select("firstName")
+        .select("-password")
 
     if(!createdUser){
         throw new apiError(500, "something went wrong while registring user!");
@@ -133,7 +133,7 @@ const loginUser = asyncHandler(async (req, res)=>{
         throw new apiError(401,"password is invalid");
     }
     const {accessToken,refreshToken} = await generateAccessAndRefereshToken(User._id);
-
+    console.log(accessToken);
     const loggedInUser = await user.findById(User._id).select("-password -refreshToken");
 
     const options = {
@@ -155,9 +155,21 @@ const loginUser = asyncHandler(async (req, res)=>{
 });
 
 
+const me = asyncHandler( async (req,res)=>{
+    const userFind = await user.findById(req.User._id).select('-password');
+    if(!userFind){
+        throw new apiError(500,"cookies is not working");
+    }
+    return res
+        .status(200)
+        .json(
+            new apiResponse(200,userFind,"profile fetched")
+        )
+}) 
 
 export {
     userRegister,
     googleLogin,
-    loginUser
+    loginUser,
+    me
 }
