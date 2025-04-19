@@ -139,4 +139,36 @@ userSchema.methods.generateRefreshToken = function(){
     )
 };
 
+const orderSchema = new mongoose.Schema({
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    items: [
+      {
+        name: String,
+        price: Number,
+        quantity: Number,
+        size: String,
+        image: String,
+      },
+    ],
+    address: {
+      name: String,
+      phone: String,
+      address: String,
+      city: String,
+      state: String,
+      pincode: String,
+    },
+    totalAmount: Number,
+    status: {
+      type: String,
+      default: "pending",
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+  });
+  
+
+export const Order = mongoose.model("Order", orderSchema);
 export const user = mongoose.model("user",userSchema);

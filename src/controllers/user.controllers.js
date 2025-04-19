@@ -4,6 +4,7 @@ import { apiResponse } from "../utils/apiRespones.js";
 import { user} from "../models/user.model.js";
 import {OAuth2Client} from "google-auth-library";
 import Joi from "joi";
+import {Order } from "../models/user.model.js"
 
 const generateAccessAndRefereshToken = async (userId) => {
     try {
@@ -154,7 +155,6 @@ const loginUser = asyncHandler(async (req, res)=>{
     );
 });
 
-
 const me = asyncHandler( async (req,res)=>{
     const userFind = await user.findById(req.User._id).select('-password');
     if(!userFind){
@@ -167,9 +167,71 @@ const me = asyncHandler( async (req,res)=>{
         )
 }) 
 
+const logoutUser = asyncHandler(async (req, res) => {
+    console.log(req.User._id);
+    await user.findByIdAndUpdate(
+        req.User._id,
+        {
+            $set: {
+                refreshToken: undefined,
+            },
+        },
+        {
+            new: true,
+        },
+    );
+
+    const options = {
+        httpOnly: true,
+        secure : true,
+        sameSite : 'none',
+    };
+    return res
+        .status(200)
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json(new apiResponse(200, {}, "user logged out successfully."));
+});
+
+const orderDetails = asyncHandler(async (req, res) => {
+    const userFind = await user.findById(req.User._id).select("-password");
+  
+    if (!userFind) {
+      throw new apiError(400, "User is not logged in");
+    }
+  
+    const {
+      cartItems,        // array of {name, price, quantity, size, image}
+      address,          // {name, phone, address, city, state, pincode}
+      totalAmount,
+    } = req.body;
+  
+    if (!cartItems || !address || !totalAmount) {
+      throw new apiError(400, "Missing required fields");
+    }
+  
+    const newOrder = await Order.create({
+      user: userFind._id,
+      items: cartItems,
+      address,
+      totalAmount,
+    });
+  
+    // Redirect to payment gateway or send order details
+    res.status(201).json({
+      success: true,
+      message: "Order created successfully",
+      orderId: newOrder._id,
+      redirectUrl: `/payment/${newOrder._id}`, // or return payment token/URL
+    });
+  });
+
+
 export {
     userRegister,
     googleLogin,
     loginUser,
-    me
+    me,
+    logoutUser,
+    orderDetails
 }
