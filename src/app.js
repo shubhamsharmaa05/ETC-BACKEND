@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser"
+import { apiError } from "./utils/apiError.js";
 
 const app = express();
 
@@ -23,22 +24,20 @@ import userRouter from "../src/routes/user.routes.js";
 app.use("/api/v1/users", userRouter);
 
 
-// // global error handling middleware
-// app.use((err,req,res,next)=>{
-//     if(err instanceof apiError){
-//         return res.status(err.statusCode).json({
-//             success:err.success,
-//             message: err.message,
-//             errors: err.errors,
-//         });
-//     }
+app.use((err, req, res, next) => {
+    if (err instanceof apiError) {
+        return res.status(err.statusCode).json({
+            success: err.success,
+            message: err.message,
+            errors: err.errors,
+        });
+    }
 
-//     // default error handler
-//     res.status(500).json({
-//         success:false,
-//         message: "Interal server error",
-//     });
-// });
-
+    // Default Error Handler
+    res.status(500).json({
+        success: false,
+        message: "Internal Server Error",
+    });
+});
 
 export {app};
