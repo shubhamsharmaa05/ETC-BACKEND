@@ -195,11 +195,16 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 const orderDetails = asyncHandler(async (req, res) => {
     const userFind = await user.findById(req.User._id).select("-password");
+    // console.log(`hello ${userFind}`);
   
     if (!userFind) {
-      throw new apiError(400, "User is not logged in");
-    }
-  
+        // You can send a 401 Unauthorized error
+        return res.status(401).json({
+          success: false,
+          message: "User not logged in",
+          redirect: "register.html", // Add this if you want frontend to use it
+        });
+      }
     const {
       cartItems,        // array of {name, price, quantity, size, image}
       address,          // {name, phone, address, city, state, pincode}
@@ -212,6 +217,7 @@ const orderDetails = asyncHandler(async (req, res) => {
   
     const newOrder = await Order.create({
       user: userFind._id,
+      userEmail: userFind.email,
       items: cartItems,
       address,
       totalAmount,

@@ -141,6 +141,7 @@ userSchema.methods.generateRefreshToken = function(){
 
 const orderSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    userEmail: { type: String, required: true },
     items: [
       {
         name: String,
